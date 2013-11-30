@@ -14,8 +14,8 @@ type DirectoryScanner struct {
 }
 
 type directoryEntry struct {
-	path  string
-	info  os.FileInfo
+	path string
+	info os.FileInfo
 }
 
 // Returns a directory scanner. This iterates over the given directory,

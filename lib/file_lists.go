@@ -83,7 +83,7 @@ func (lister *FileLister) CachedMatchList() (MatchList, error) {
 
 	items := MatchList{}
 
-	if(lister.IsCachedListExpired()) {
+	if lister.IsCachedListExpired() {
 		err := lister.GenerateCached()
 		if err != nil {
 			return items, err
