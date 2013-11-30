@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 )
 
 type FileLister struct {
@@ -55,9 +56,39 @@ func (lister *FileLister) LiveMatchList() (MatchList, error) {
 	return items, nil
 }
 
+func (lister *FileLister) IsCachedListExpired() bool {
+
+	info, err := os.Stat(lister.CachePath)
+	if err != nil {
+		return true
+	}
+
+	earliestOk := time.Now().Add(time.Minute * -5)
+	return info.ModTime().Before(earliestOk)
+
+}
+
+func (lister *FileLister) GenerateCached() error {
+	list, err := lister.LiveMatchList()
+	if err != nil {
+		return err
+	}
+
+	err = lister.WriteCachedList(list)
+	return err
+
+}
+
 func (lister *FileLister) CachedMatchList() (MatchList, error) {
 
 	items := MatchList{}
+
+	if(lister.IsCachedListExpired()) {
+		err := lister.GenerateCached()
+		if err != nil {
+			return items, err
+		}
+	}
 
 	file, err := os.Open(lister.CachePath)
 	if err != nil {

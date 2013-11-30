@@ -44,11 +44,10 @@ func init() {
 }
 
 func regenerateList() {
-	list, err := projectList.LiveMatchList()
+	err := projectList.GenerateCached()
 	if err != nil {
 		dieWithError(err)
 	}
-	projectList.WriteCachedList(list)
 }
 
 func listLiveItems() {
