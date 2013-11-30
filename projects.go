@@ -19,7 +19,7 @@ func dieWithError(e error) {
 func init() {
 
 	runtime.GOMAXPROCS(runtime.NumCPU())
-	
+
 	// Our project list will be based on the current user.
 
 	user, err := user.Current()
