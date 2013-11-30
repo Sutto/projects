@@ -11,11 +11,10 @@ import (
 type FileLister struct {
 	RootDirectory string
 	CachePath     string
-	MaxDepth      int
 }
 
-func NewFileLister(root, cache string, maxDepth int) *FileLister {
-	return &FileLister{root, cache, maxDepth}
+func NewFileLister(root, cache string) *FileLister {
+	return &FileLister{root, cache}
 }
 
 type Match struct {
@@ -39,7 +38,7 @@ func (m *Match) ToLine() string {
 func (lister *FileLister) LiveMatchList() (MatchList, error) {
 	items := make(MatchList, 0)
 	// We run the scanner over children.
-	scanner := NewDirectoryScanner(lister.RootDirectory, lister.MaxDepth)
+	scanner := NewDirectoryScanner(lister.RootDirectory)
 
 	lock := new(sync.Mutex)
 

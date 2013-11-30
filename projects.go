@@ -40,7 +40,7 @@ func init() {
 	}
 
 	// We've finally initialized the filter lister to the correct path.
-	projectList = projects.NewFileLister(codeDirectory, cachedProjectsList, 5)
+	projectList = projects.NewFileLister(codeDirectory, cachedProjectsList)
 }
 
 func regenerateList() {
