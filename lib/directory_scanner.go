@@ -9,7 +9,7 @@ import (
 type ScannerCallback func(*Match)
 
 type DirectoryScanner struct {
-	Root      string
+	Root string
 }
 
 type directoryEntry struct {
@@ -59,6 +59,6 @@ func (scanner *DirectoryScanner) Scan(callback ScannerCallback) error {
 	}
 
 	entry := &directoryEntry{scanner.Root, info}
-	err 	= entry.ScanChildren(scanner, callback)
+	err = entry.ScanChildren(scanner, callback)
 	return err
 }
