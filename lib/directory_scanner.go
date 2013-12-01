@@ -10,7 +10,6 @@ type ScannerCallback func(*Match)
 
 type DirectoryScanner struct {
 	Root      string
-	Processor *ConcurrentProcessor
 }
 
 type directoryEntry struct {
@@ -21,8 +20,7 @@ type directoryEntry struct {
 // Returns a directory scanner. This iterates over the given directory,
 // invoking the callback passed to .Scan or returning an error.
 func NewDirectoryScanner(root string) *DirectoryScanner {
-	processor := NewConcurrentProcessor()
-	return &DirectoryScanner{root, processor}
+	return &DirectoryScanner{root}
 }
 
 func (e *directoryEntry) ToMatch() *Match {
@@ -45,18 +43,13 @@ func (e *directoryEntry) ScanChildren(scanner *DirectoryScanner, callback Scanne
 			if _, err := os.Stat(pathToCheck); err == nil {
 				callback(child.ToMatch())
 			} else {
-				scanner.Processor.AddJob(child.ScanChildrenJob(scanner, callback))
+				if err := child.ScanChildren(scanner, callback); err != nil {
+					return err
+				}
 			}
 		}
 	}
 	return nil
-}
-
-// Wraps returning a func, just so we make sure we have a correct reference to the scanner and callback.
-func (e *directoryEntry) ScanChildrenJob(scanner *DirectoryScanner, callback ScannerCallback) Job {
-	return func() {
-		e.ScanChildren(scanner, callback)
-	}
 }
 
 func (scanner *DirectoryScanner) Scan(callback ScannerCallback) error {
@@ -66,13 +59,6 @@ func (scanner *DirectoryScanner) Scan(callback ScannerCallback) error {
 	}
 
 	entry := &directoryEntry{scanner.Root, info}
-
-	processor := scanner.Processor
-
-	processor.StartManager()
-	processor.StartWorkers(8)
-	processor.AddJob(entry.ScanChildrenJob(scanner, callback))
-	// Now, start the workers.
-	processor.WaitForCompletion()
-	return nil
+	err 	= entry.ScanChildren(scanner, callback)
+	return err
 }
