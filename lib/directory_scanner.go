@@ -1,10 +1,10 @@
 package projects
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sync"
 )
 
@@ -38,7 +38,6 @@ func directoryScanProcessor(input chan *directoryEntry, output chan *Match, scan
 		entries, err := ioutil.ReadDir(e.path)
 
 		if err != nil {
-			// fmt.Printf("Scanned: %v", e)
 			scanWG.Done()
 			continue
 		}
@@ -52,16 +51,13 @@ func directoryScanProcessor(input chan *directoryEntry, output chan *Match, scan
 			child := &directoryEntry{path, entry, e.depth + 1}
 			if _, err := os.Stat(pathToCheck); err == nil {
 				processWG.Add(1)
-				fmt.Printf("Queued: %v\n", child.ToMatch())
 				output <- child.ToMatch()
 			} else if e.depth < MaxProcessingDepth {
 				scanWG.Add(1)
-				fmt.Printf("Scanning: %v\n", child)
 				input <- child
 			}
 		}
 
-		fmt.Printf("Scanned: %v\n", e)
 		scanWG.Done()
 	}
 }
@@ -69,42 +65,36 @@ func directoryScanProcessor(input chan *directoryEntry, output chan *Match, scan
 func processResults(input chan *Match, callback ScannerCallback, wg *sync.WaitGroup) {
 	for {
 		result := <-input
-		// fmt.Printf("Processed: %v - wg: %v\n", result, wg)
 		callback(result)
-		// fmt.Printf("Called the callback: %v\n", result)
 		wg.Done()
 	}
 }
 
 func (scanner *DirectoryScanner) Scan(callback ScannerCallback) error {
+	concurrency := runtime.NumCPU()
 	info, err := os.Stat(scanner.Root)
-	channel := make(chan *directoryEntry)
-	result := make(chan *Match)
-
-	var scanWG sync.WaitGroup
-	var processWG sync.WaitGroup
-
-	for i := 0; i < 8; i++ {
-		go directoryScanProcessor(channel, result, scanner, &scanWG, &processWG)
-	}
-
-	// go processResults(result, callback, &processWG)
-
 	if err != nil {
 		return err
 	}
 
-	entry := &directoryEntry{scanner.Root, info, 1}
-	scanWG.Add(1)
-	channel <- entry
+	entries := make(chan *directoryEntry, concurrency*100)
+	matches := make(chan *Match, concurrency*100)
 
-	for {
-		item := <-result
-		callback(item)
+	var scanWG sync.WaitGroup
+	var processWG sync.WaitGroup
+
+	for i := 0; i < concurrency; i++ {
+		go directoryScanProcessor(entries, matches, scanner, &scanWG, &processWG)
 	}
+	go processResults(matches, callback, &processWG)
 
-	fmt.Printf("Now done scanning")
+	entry := &directoryEntry{scanner.Root, info, 1}
+
+	scanWG.Add(1)
+	entries <- entry
+
 	scanWG.Wait()
+	processWG.Wait()
 
 	return err
 }
