@@ -2,11 +2,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/Sutto/projects/lib"
 	"os"
 	"os/user"
 	"path/filepath"
 	"runtime"
+
+	projects "github.com/Sutto/projects/lib"
 )
 
 var projectList *projects.FileLister

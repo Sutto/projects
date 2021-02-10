@@ -63,7 +63,7 @@ func (lister *FileLister) IsCachedListExpired() bool {
 		return true
 	}
 
-	earliestOk := time.Now().Add(time.Minute * -5)
+	earliestOk := time.Now().Add(time.Hour * 24)
 	return info.ModTime().Before(earliestOk)
 
 }
